@@ -5,8 +5,8 @@
   gather_facts: no
   vars:
     ansible_network_os: ios
-    backup_folder: /home/jklaiber/webinar/level2/backup
-    history_folder: /home/jklaiber/webinar/level2/history
+    backup_folder: /Users/jklaiber/webinar/techwebinar_automated-network-device-backup/level2/backup
+    history_folder: /Users/jklaiber/webinar/techwebinar_automated-network-device-backup/level2/history
   vars_files:
     - secret.yml
 
