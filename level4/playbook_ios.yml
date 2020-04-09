@@ -1,0 +1,86 @@
+---
+- name: Backup Network Devices
+  connection: network_cli
+  hosts: all
+  gather_facts: no
+  vars:
+    ansible_network_os: ios
+    backup_folder: "{{ local_backup_folder }}"
+    history_folder: "{{ local_history_folder }}"
+  vars_files:
+    - secret.yml
+    - options.yml
+
+  tasks:
+    - name: backup device
+      block:
+      - name: create backup directory for each device if not exist
+        file:
+          path: "{{ backup_folder }}/{{ netbox_name }}/"
+          state: directory
+          mode: '0755'
+      - name: create history directory for each device if not exist
+        file:
+          path: "{{ history_folder }}/{{ netbox_name }}/"
+          state: directory
+          mode: '0755'
+      - name: register running-config
+        cli_command:
+          command: show running-config
+        register: config
+      - name: save running-config
+        copy:
+          content: "{{ config.stdout }}"
+          dest: "{{ backup_folder }}/{{ netbox_name }}/{{ netbox_name }}.bck"
+      - name: remove non Config Lines
+        lineinfile:
+          path: "{{ backup_folder }}/{{ netbox_name }}/{{ netbox_name }}.bck"
+          line: "Building configuration..."
+          state: absent
+      - name: remove non Config Lines - REGEXP
+        lineinfile:
+          path: "{{ backup_folder }}/{{ netbox_name }}/{{ netbox_name }}.bck"
+          regexp: 'Current configuration.*'
+          state: absent
+      - name: remove NTP clock-period lines
+        lineinfile:
+          path: "{{ backup_folder }}/{{ netbox_name }}/{{ netbox_name }}.bck"
+          regexp: 'ntp clock-period*'
+          state: absent
+      - name: register interface information
+        cli_command:
+          command: show interfaces | include line|errors
+        register: interfaceinformation
+      - name: save interface information
+        copy:
+          content: "{{ interfaceinformation.stdout }}"
+          dest: "{{ history_folder }}/{{ netbox_name }}/{{ netbox_name }}_interface.info"
+      - name: register vlan information
+        cli_command:
+          command: show vlan
+        register: vlans
+      - name: save vlan information
+        copy:
+          content: "{{ vlans.stdout }}"
+          dest: "{{ history_folder }}/{{ netbox_name }}/{{ netbox_name }}_vlan.info"
+      - name: register stp information
+        cli_command:
+          command: show spanning-tree
+        register: stp
+      - name: copy stp information to backup folder
+        copy:
+          content: "{{ stp.stdout }}"
+          dest: "{{ history_folder }}/{{ netbox_name }}/{{ netbox_name }}_stp.info"
+      - name: register cdp information
+        cli_command:
+          command: show cdp neighbors detail
+        register: cdp
+      - name: copy cdp information to backup folder
+        copy:
+          content: "{{ cdp.stdout }}"
+          dest: "{{ history_folder }}/{{ netbox_name }}/{{ netbox_name }}_cdp.info"
+      - name: remove holdtime from cdp information
+        lineinfile:
+          path: "{{ history_folder }}/{{ netbox_name }}/{{ netbox_name }}_cdp.info"
+          regexp: 'Holdtime*'
+          state: absent

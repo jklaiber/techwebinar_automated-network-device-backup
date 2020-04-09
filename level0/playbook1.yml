@@ -1,0 +1,21 @@
+---
+- name: Backup Network Devices
+  connection: network_cli
+  hosts: lab
+  gather_facts: no
+  vars:
+    ansible_network_os: ios
+    ansible_ssh_user: ins 
+    ansible_ssh_pass: ins@lab
+
+  tasks:
+    - name: backup device
+      block:
+      - name: register running-config
+        cli_command:
+          command: show running-config
+        register: config
+      - name: save running-config
+        copy:
+          content: "{{ config.stdout }}"
+          dest: "{{ ansible_ssh_host }}.bck"

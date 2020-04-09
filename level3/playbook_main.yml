@@ -1,0 +1,5 @@
+---
+- name: call IOS playbook
+  import_playbook: playbook_ios.yml
+- name: call Git playbook
+  import_playbook: playbook_git.yml

@@ -1,0 +1,16 @@
+netbox:
+    main:
+        api_url: 'http://netbox.webinar.local:8080/api/dcim/devices/?has_primary_ip=True'
+        api_token: '0123456789abcdef0123456789abcdef01234567'
+    group_by:
+        default:
+            - platform
+    hosts_vars:
+        ip:
+            ansible_ssh_host: primary_ip         
+        general:
+            netbox_version: platform
+            netbox_role: device_role
+            netbox_name: display_name
+        status: 
+            netbox_status: status

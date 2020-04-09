@@ -1,0 +1,56 @@
+---
+- name: Save Config to Git Repo
+  vars:
+    backup_folder: "{{ local_backup_folder }}"
+    history_folder: "{{ local_history_folder }}"
+  vars_files:
+    - options.yml
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Get Time
+      command: date +'%d/%m/%Y %H:%M'
+      register: timestamp
+      changed_when: false
+      delegate_to: localhost
+      run_once: yes
+    - name: Get username running the deploy
+      become: false
+      local_action: command whoami
+      register: username_on_the_host
+    - name: Get hostname of the controller
+      become: false
+      local_action: command hostname
+      register: hostname_of_the_controller
+    - name: Starting Git tasks for backup
+      block:
+      - name: report, add, commit and push new changes
+        shell: |
+          git add *
+          git commit -m "{{ username_on_the_host.stdout }}@{{ hostname_of_the_controller.stdout }} New Changes backuped {{ timestamp.stdout }}"
+          echo '# INS Network Device Backup' > README.md
+          echo 'All devices are backuped with Ansible.' >> README.md
+          echo '```'  >> README.md
+          git log --stat --pretty=format:"" -1 >> README.md
+          echo '```'  >> README.md
+          git add README.md
+          git commit -m "{{ username_on_the_host.stdout }}@{{ hostname_of_the_controller.stdout }} New Changes backuped {{ timestamp.stdout }}"
+          git push
+        args:
+          chdir: "{{ backup_folder }}"
+    - name: Starting Git tasks for history
+      block:
+      - name: report, add, commit and push new changes
+        shell: |
+          git add *
+          git commit -m "{{ username_on_the_host.stdout }}@{{ hostname_of_the_controller.stdout }} New Changes backuped {{ timestamp.stdout }}"
+          echo '# INS Network Device History' > README.md
+          echo 'All device historys are created with Ansible.' >> README.md
+          echo '```'  >> README.md
+          git log --stat --pretty=format:"" -1 >> README.md
+          echo '```'  >> README.md
+          git add README.md
+          git commit -m "{{ username_on_the_host.stdout }}@{{ hostname_of_the_controller.stdout }} New History created {{ timestamp.stdout }}"
+          git push
+        args:
+          chdir: "{{ history_folder }}"

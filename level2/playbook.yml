@@ -1,0 +1,85 @@
+---
+- name: Backup Network Devices
+  connection: network_cli
+  hosts: lab
+  gather_facts: no
+  vars:
+    ansible_network_os: ios
+    backup_folder: /home/jklaiber/webinar/level2/backup
+    history_folder: /home/jklaiber/webinar/level2/history
+  vars_files:
+    - secret.yml
+
+  tasks:
+    - name: backup device
+      block:
+      - name: create backup directory for each device if not exist
+        file:
+          path: "{{ backup_folder }}/{{ ansible_ssh_host }}/"
+          state: directory
+          mode: '0755'
+      - name: create history directory for each device if not exist
+        file:
+          path: "{{ history_folder }}/{{ ansible_ssh_host }}/"
+          state: directory
+          mode: '0755'
+      - name: register running-config
+        cli_command:
+          command: show running-config
+        register: config
+      - name: save running-config
+        copy:
+          content: "{{ config.stdout }}"
+          dest: "{{ backup_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}.bck"
+      - name: remove non Config Lines
+        lineinfile:
+          path: "{{ backup_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}.bck"
+          line: "Building configuration..."
+          state: absent
+      - name: remove non Config Lines - REGEXP
+        lineinfile:
+          path: "{{ backup_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}.bck"
+          regexp: 'Current configuration.*'
+          state: absent
+      - name: remove NTP clock-period lines
+        lineinfile:
+          path: "{{ backup_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}.bck"
+          regexp: 'ntp clock-period*'
+          state: absent
+      - name: register interface information
+        cli_command:
+          command: show interfaces | include line|errors
+        register: interfaceinformation
+      - name: save interface information
+        copy:
+          content: "{{ interfaceinformation.stdout }}"
+          dest: "{{ history_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}_interface.info"
+      - name: register vlan information
+        cli_command:
+          command: show vlan
+        register: vlans
+      - name: save vlan information
+        copy:
+          content: "{{ vlans.stdout }}"
+          dest: "{{ history_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}_vlan.info"
+      - name: register stp information
+        cli_command:
+          command: show spanning-tree
+        register: stp
+      - name: copy stp information to backup folder
+        copy:
+          content: "{{ stp.stdout }}"
+          dest: "{{ history_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}_stp.info"
+      - name: register cdp information
+        cli_command:
+          command: show cdp neighbors detail
+        register: cdp
+      - name: copy cdp information to backup folder
+        copy:
+          content: "{{ cdp.stdout }}"
+          dest: "{{ history_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}_cdp.info"
+      - name: remove holdtime from cdp information
+        lineinfile:
+          path: "{{ history_folder }}/{{ ansible_ssh_host }}/{{ ansible_ssh_host }}_cdp.info"
+          regexp: 'Holdtime*'
+          state: absent
