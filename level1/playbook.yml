@@ -7,8 +7,8 @@
     ansible_network_os: ios
     ansible_ssh_user: ins 
     ansible_ssh_pass: ins@lab
-    backup_folder: /home/jklaiber/webinar/level1/backup
-    history_folder: /home/jklaiber/webinar/level1/history
+    backup_folder: /Users/jklaiber/webinar/techwebinar_automated-network-device-backup/level1/backup
+    history_folder: /Users/jklaiber/webinar/techwebinar_automated-network-device-backup/level1/history
 
   tasks:
     - name: backup device
