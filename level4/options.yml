@@ -1,2 +1,2 @@
-local_backup_folder: '/Users/jklaiber/webinar/git/network_backup'
-local_history_folder: '/Users/jklaiber/webinar/git/network_history'
+local_backup_folder: '/Users/jklaiber/webinar/git/network_backup_local'
+local_history_folder: '/Users/jklaiber/webinar/git/network_history_local'
